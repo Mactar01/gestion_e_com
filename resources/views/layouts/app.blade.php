@@ -14,9 +14,16 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <body class="font-sans antialiased" id="themeBody">
+        <div class="min-h-screen" id="mainBg">
             @include('layouts.navigation')
+
+            <div class="container-fluid d-flex justify-content-end align-items-center pt-2 pb-1">
+                <button id="toggleThemeBtn" class="btn btn-outline-secondary btn-sm">
+                    <span id="themeIcon" class="me-1">🌙</span>
+                    <span id="themeText">Mode sombre</span>
+                </button>
+            </div>
 
             <!-- Page Heading -->
             @if (isset($header))
@@ -29,8 +36,42 @@
 
             <!-- Page Content -->
             <main>
+                @yield('content')
                 {{ $slot ?? '' }}
             </main>
         </div>
+        <script>
+            // Fonction de bascule du thème
+            function setTheme(dark) {
+                const body = document.getElementById('themeBody');
+                const mainBg = document.getElementById('mainBg');
+                const icon = document.getElementById('themeIcon');
+                const text = document.getElementById('themeText');
+                if (dark) {
+                    body.classList.add('bg-dark', 'text-white');
+                    body.classList.remove('bg-white', 'text-dark');
+                    mainBg.classList.add('bg-dark', 'text-white');
+                    mainBg.classList.remove('bg-white', 'text-dark');
+                    icon.textContent = '🌙';
+                    text.textContent = 'Mode sombre';
+                } else {
+                    body.classList.add('bg-white', 'text-dark');
+                    body.classList.remove('bg-dark', 'text-white');
+                    mainBg.classList.add('bg-white', 'text-dark');
+                    mainBg.classList.remove('bg-dark', 'text-white');
+                    icon.textContent = '☀️';
+                    text.textContent = 'Mode clair';
+                }
+            }
+            // Initialisation
+            let darkMode = localStorage.getItem('darkMode');
+            if (darkMode === null) darkMode = '1'; // sombre par défaut
+            setTheme(darkMode === '1');
+            document.getElementById('toggleThemeBtn').onclick = function() {
+                darkMode = (darkMode === '1') ? '0' : '1';
+                localStorage.setItem('darkMode', darkMode);
+                setTheme(darkMode === '1');
+            };
+        </script>
     </body>
 </html>

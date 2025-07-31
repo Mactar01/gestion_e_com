@@ -14,15 +14,8 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $categories = Category::all();
-        $query = Product::query();
-
-        if ($request->filled('category')) {
-            $query->where('category_id', $request->category);
-        }
-        if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
-        }
-        $products = $query->with('category')->paginate(12);
+        // DEBUG : On récupère tous les produits sans filtre
+        $products = Product::with('category')->paginate(12);
         return view('products.index', compact('products', 'categories'));
     }
 
