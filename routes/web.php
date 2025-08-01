@@ -54,7 +54,9 @@ Route::post('cart/update/{product}', [CartController::class, 'update'])->name('c
 Route::post('cart/remove/{product}', [CartController::class, 'remove'])->name('cart.remove');
 
 Route::get('orders/{order}/invoice', [OrderController::class, 'downloadInvoice'])->middleware('auth')->name('orders.invoice');
+Route::post('orders/{order}/regenerate-invoice', [OrderController::class, 'regenerateInvoice'])->middleware('auth')->name('orders.regenerate-invoice');
 
 Route::get('admin/orders/{order}/invoice', [\App\Http\Controllers\Admin\OrderController::class, 'downloadInvoice'])->middleware(['auth', 'is_admin'])->name('admin.orders.invoice');
+Route::post('admin/orders/{order}/regenerate-invoice', [\App\Http\Controllers\Admin\OrderController::class, 'regenerateInvoice'])->middleware(['auth', 'is_admin'])->name('admin.orders.regenerate-invoice');
 
 require __DIR__.'/auth.php';

@@ -8,10 +8,12 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facades\Pdf;
+use PDF;
 use App\Models\Invoice;
 use App\Mail\OrderConfirmationMail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -48,12 +50,15 @@ class OrderController extends Controller
         if (empty($cart)) {
             return redirect()->route('cart.index')->with('error', 'Votre panier est vide.');
         }
+        
         $validated = $request->validate([
             'address' => 'required|string|max:255',
             'payment_method' => 'required|in:en_ligne,a_la_livraison',
         ]);
+        
         DB::beginTransaction();
         try {
+            // Créer la commande
             $order = Order::create([
                 'user_id' => Auth::id(),
                 'total' => collect($cart)->sum(function ($item) {
@@ -64,6 +69,8 @@ class OrderController extends Controller
                 'payment_method' => $validated['payment_method'],
                 'paid' => $validated['payment_method'] === 'en_ligne' ? true : false,
             ]);
+            
+            // Créer les éléments de commande
             foreach ($cart as $product_id => $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -72,7 +79,8 @@ class OrderController extends Controller
                     'price' => $item['price'],
                 ]);
             }
-            // Paiement simulé (à adapter pour paiement réel)
+            
+            // Créer le paiement
             Payment::create([
                 'order_id' => $order->id,
                 'amount' => $order->total,
@@ -80,28 +88,60 @@ class OrderController extends Controller
                 'status' => $validated['payment_method'] === 'en_ligne' ? 'effectue' : 'en_attente',
                 'payment_date' => $validated['payment_method'] === 'en_ligne' ? now() : null,
             ]);
-            // Génération de la facture PDF
+            
+            // Charger les relations pour la génération PDF
             $order->load('orderItems.product', 'user');
+            
+            // Générer la facture PDF
             $invoiceNumber = 'FAC-' . str_pad($order->id, 6, '0', STR_PAD_LEFT);
-            $pdf = Pdf::loadView('invoices.pdf', [
-                'order' => $order,
-                'invoiceNumber' => $invoiceNumber,
-            ]);
-            $pdfPath = 'invoices/' . $invoiceNumber . '.pdf';
-            \Storage::disk('public')->put($pdfPath, $pdf->output());
-            Invoice::create([
-                'order_id' => $order->id,
-                'invoice_number' => $invoiceNumber,
-                'pdf_path' => $pdfPath,
-            ]);
+            
+            try {
+                $pdf = Pdf::loadView('invoices.pdf', [
+                    'order' => $order,
+                    'invoiceNumber' => $invoiceNumber,
+                ]);
+                
+                // Créer le dossier invoices s'il n'existe pas
+                $invoiceDir = 'invoices';
+                if (!Storage::disk('public')->exists($invoiceDir)) {
+                    Storage::disk('public')->makeDirectory($invoiceDir);
+                }
+                
+                $pdfPath = $invoiceDir . '/' . $invoiceNumber . '.pdf';
+                Storage::disk('public')->put($pdfPath, $pdf->output());
+                
+                // Créer l'enregistrement de facture
+                Invoice::create([
+                    'order_id' => $order->id,
+                    'invoice_number' => $invoiceNumber,
+                    'pdf_path' => $pdfPath,
+                ]);
+                
+                Log::info("Facture PDF générée avec succès pour la commande {$order->id}");
+                
+            } catch (\Exception $pdfError) {
+                Log::error("Erreur lors de la génération du PDF pour la commande {$order->id}: " . $pdfError->getMessage());
+                // Continuer sans facture PDF
+            }
+            
             DB::commit();
             session()->forget('cart');
-            // Envoi de l'email de confirmation de commande
-            Mail::to($order->user->email)->send(new OrderConfirmationMail($order));
-            return redirect()->route('orders.index')->with('success', 'Commande passée avec succès.');
+            
+            // Envoi de l'email de confirmation
+            try {
+                Mail::to($order->user->email)->send(new OrderConfirmationMail($order));
+                Log::info("Email de confirmation envoyé pour la commande {$order->id}");
+            } catch (\Exception $emailError) {
+                Log::error("Erreur lors de l'envoi de l'email pour la commande {$order->id}: " . $emailError->getMessage());
+                // Continuer même si l'email échoue
+            }
+            
+            return redirect()->route('orders.index')->with('success', 'Commande passée avec succès. Un email de confirmation vous a été envoyé.');
+            
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Erreur lors du passage de la commande.');
+            Log::error("Erreur lors de la création de la commande: " . $e->getMessage());
+            return back()->with('error', 'Erreur lors du passage de la commande. Veuillez réessayer.');
         }
     }
 
@@ -111,7 +151,7 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         $this->authorize('view', $order);
-        $order->load('orderItems.product', 'payment');
+        $order->load('orderItems.product', 'payment', 'invoice');
         return view('orders.show', compact('order'));
     }
 
@@ -132,20 +172,91 @@ class OrderController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource.
      */
     public function destroy(string $id)
     {
         //
     }
 
+    /**
+     * Download invoice PDF
+     */
     public function downloadInvoice(Order $order)
     {
         $this->authorize('view', $order);
+        
         $invoice = $order->invoice;
-        if (!$invoice || !\Storage::disk('public')->exists($invoice->pdf_path)) {
-            return back()->with('error', 'Facture non disponible.');
+        
+        if (!$invoice) {
+            return back()->with('error', 'Aucune facture trouvée pour cette commande.');
         }
-        return response()->download(storage_path('app/public/' . $invoice->pdf_path), $invoice->invoice_number . '.pdf');
+        
+        if (!Storage::disk('public')->exists($invoice->pdf_path)) {
+            Log::error("Fichier PDF manquant: {$invoice->pdf_path}");
+            return back()->with('error', 'Le fichier PDF de la facture est introuvable.');
+        }
+        
+        try {
+            $filePath = storage_path('app/public/' . $invoice->pdf_path);
+            
+            if (!file_exists($filePath)) {
+                Log::error("Fichier PDF introuvable sur le système: {$filePath}");
+                return back()->with('error', 'Le fichier PDF de la facture est introuvable.');
+            }
+            
+            return response()->download($filePath, $invoice->invoice_number . '.pdf', [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $invoice->invoice_number . '.pdf"'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error("Erreur lors du téléchargement de la facture {$invoice->id}: " . $e->getMessage());
+            return back()->with('error', 'Erreur lors du téléchargement de la facture.');
+        }
+    }
+
+    /**
+     * Regenerate invoice PDF
+     */
+    public function regenerateInvoice(Order $order)
+    {
+        $this->authorize('view', $order);
+        
+        try {
+            $order->load('orderItems.product', 'user');
+            
+            $invoiceNumber = 'FAC-' . str_pad($order->id, 6, '0', STR_PAD_LEFT);
+            
+            $pdf = Pdf::loadView('invoices.pdf', [
+                'order' => $order,
+                'invoiceNumber' => $invoiceNumber,
+            ]);
+            
+            $invoiceDir = 'invoices';
+            if (!Storage::disk('public')->exists($invoiceDir)) {
+                Storage::disk('public')->makeDirectory($invoiceDir);
+            }
+            
+            $pdfPath = $invoiceDir . '/' . $invoiceNumber . '.pdf';
+            Storage::disk('public')->put($pdfPath, $pdf->output());
+            
+            // Mettre à jour ou créer l'enregistrement de facture
+            Invoice::updateOrCreate(
+                ['order_id' => $order->id],
+                [
+                    'invoice_number' => $invoiceNumber,
+                    'pdf_path' => $pdfPath,
+                ]
+            );
+            
+            Log::info("Facture PDF régénérée avec succès pour la commande {$order->id}");
+            
+            return back()->with('success', 'Facture PDF régénérée avec succès.');
+            
+        } catch (\Exception $e) {
+            Log::error("Erreur lors de la régénération du PDF pour la commande {$order->id}: " . $e->getMessage());
+            return back()->with('error', 'Erreur lors de la régénération de la facture PDF.');
+        }
     }
 }

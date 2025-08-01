@@ -46,6 +46,16 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
         ],
 
+        'mailtrap' => [
+            'transport' => 'smtp',
+            'host' => 'smtp.mailtrap.io',
+            'port' => 2525,
+            'encryption' => 'tls',
+            'username' => env('MAILTRAP_USERNAME'),
+            'password' => env('MAILTRAP_PASSWORD'),
+            'timeout' => null,
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],

@@ -9,6 +9,8 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Attachment;
+use PDF;
 
 class OrderConfirmationMail extends Mailable
 {
@@ -30,7 +32,7 @@ class OrderConfirmationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Order Confirmation Mail',
+            subject: 'Confirmation de votre commande - E-Commerce Premium',
         );
     }
 
@@ -40,7 +42,7 @@ class OrderConfirmationMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'emails.order_confirmation',
         );
     }
 
@@ -51,12 +53,34 @@ class OrderConfirmationMail extends Mailable
      */
     public function attachments(): array
     {
-        return [];
+        $attachments = [];
+        
+        // Ajouter la facture PDF si elle existe
+        if ($this->order->invoice && \Storage::disk('public')->exists($this->order->invoice->pdf_path)) {
+            $attachments[] = Attachment::fromStorageDisk('public', $this->order->invoice->pdf_path)
+                ->as($this->order->invoice->invoice_number . '.pdf')
+                ->withMime('application/pdf');
+        }
+        
+        return $attachments;
     }
 
+    /**
+     * Build the message.
+     */
     public function build()
     {
-        return $this->subject('Confirmation de votre commande')
+        $mail = $this->subject('Confirmation de votre commande - E-Commerce Premium')
             ->view('emails.order_confirmation');
+
+        // Ajouter la facture PDF en pièce jointe si elle existe
+        if ($this->order->invoice && \Storage::disk('public')->exists($this->order->invoice->pdf_path)) {
+            $mail->attach(storage_path('app/public/' . $this->order->invoice->pdf_path), [
+                'as' => $this->order->invoice->invoice_number . '.pdf',
+                'mime' => 'application/pdf',
+            ]);
+        }
+
+        return $mail;
     }
 }
