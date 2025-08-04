@@ -34,9 +34,16 @@
     <div class="text-end">
         <strong>Total : {{ number_format($order->total, 2) }} €</strong>
     </div>
-    @if($order->invoice)
-        <a href="{{ route('orders.invoice', $order) }}" class="btn btn-primary mt-2">Télécharger la facture PDF</a>
-    @endif
+
+    <!-- Toujours afficher le bouton de téléchargement -->
+    <a href="{{ route('orders.invoice', $order) }}" class="btn btn-primary mt-2">
+        @if($order->invoice)
+            Télécharger la facture PDF
+        @else
+            Générer et télécharger la facture PDF
+        @endif
+    </a>
+
     <a href="{{ route('orders.index') }}" class="btn btn-secondary mt-3">Retour à mes commandes</a>
 </div>
-@endsection 
+@endsection

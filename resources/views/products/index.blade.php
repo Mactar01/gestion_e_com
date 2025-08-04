@@ -76,12 +76,18 @@
                                 <i class="fas fa-eye"></i> Voir détails
                             </a>
                             @if($product->stock > 0)
-                                <form action="{{ route('cart.add', $product) }}" method="POST" class="d-grid">
-                                    @csrf
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-shopping-cart"></i> Ajouter au panier
-                                    </button>
-                                </form>
+                                @auth
+                                    <form action="{{ route('cart.add', $product) }}" method="POST" class="d-grid">
+                                        @csrf
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-shopping-cart"></i> Ajouter au panier
+                                        </button>
+                                    </form>
+                                @else
+                                    <a href="{{ route('login') }}" class="btn btn-primary">
+                                        <i class="fas fa-sign-in-alt"></i> Connectez-vous pour commander
+                                    </a>
+                                @endauth
                             @else
                                 <button class="btn btn-secondary" disabled>
                                     <i class="fas fa-times"></i> Indisponible

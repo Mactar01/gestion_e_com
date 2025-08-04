@@ -37,6 +37,11 @@
                             <i class="fas fa-list me-1"></i>Mes Commandes
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('cart.debug') }}">
+                            <i class="fas fa-bug me-1"></i>Debug Panier
+                        </a>
+                    </li>
                     @if(Auth::user()->is_admin)
                         <li class="nav-item">
                             <a class="nav-link {{ request()->is('admin/*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">

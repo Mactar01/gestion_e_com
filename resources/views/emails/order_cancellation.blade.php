@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmation de commande</title>
+    <title>Annulation de commande</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,7 +14,7 @@
             padding: 20px;
         }
         .header {
-            background: linear-gradient(135deg, #007bff, #0056b3);
+            background: linear-gradient(135deg, #dc3545, #c82333);
             color: white;
             padding: 30px;
             text-align: center;
@@ -30,7 +30,7 @@
             padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
-            border-left: 4px solid #007bff;
+            border-left: 4px solid #dc3545;
         }
         .product-item {
             background: white;
@@ -66,29 +66,42 @@
             border-top: 1px solid #dee2e6;
             color: #6c757d;
         }
+        .info-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🎉 Commande confirmée !</h1>
-        <p>Merci pour votre commande chez AutoPremium</p>
+        <h1>❌ Commande annulée</h1>
+        <p>Votre commande a été annulée avec succès</p>
     </div>
 
     <div class="content">
         <h2>Bonjour {{ $order->user->name }},</h2>
 
-        <p>Nous avons bien reçu votre commande et nous vous remercions pour votre confiance.</p>
+        <p>Nous confirmons l'annulation de votre commande. Les produits ont été remis en stock et sont à nouveau disponibles.</p>
 
-        <div class="order-details">
-            <h3>📋 Détails de votre commande</h3>
-            <p><strong>Numéro de commande :</strong> #{{ $orderNumber }}</p>
-            <p><strong>Date :</strong> {{ $order->created_at->format('d/m/Y à H:i') }}</p>
-            <p><strong>Statut :</strong> {{ ucfirst($order->status) }}</p>
-            <p><strong>Mode de paiement :</strong> {{ $order->payment_method == 'en_ligne' ? 'En ligne' : 'À la livraison' }}</p>
-            <p><strong>Adresse de livraison :</strong> {{ $order->address }}</p>
+        <div class="info-box">
+            <h4>ℹ️ Informations importantes</h4>
+            <p>• Les produits de votre commande ont été remis en stock<br>
+            • Aucun montant ne vous sera débité<br>
+            • Vous pouvez passer une nouvelle commande à tout moment</p>
         </div>
 
-        <h3>🚗 Produits commandés</h3>
+        <div class="order-details">
+            <h3>📋 Détails de la commande annulée</h3>
+            <p><strong>Numéro de commande :</strong> #{{ $orderNumber }}</p>
+            <p><strong>Date de création :</strong> {{ $order->created_at->format('d/m/Y à H:i') }}</p>
+            <p><strong>Date d'annulation :</strong> {{ now()->format('d/m/Y à H:i') }}</p>
+            <p><strong>Statut :</strong> Annulée</p>
+        </div>
+
+        <h3>🚗 Produits de la commande annulée</h3>
         @foreach($order->orderItems as $item)
             <div class="product-item">
                 <h4>{{ $item->product->name ?? 'Produit' }}</h4>
@@ -99,19 +112,17 @@
         @endforeach
 
         <div class="total">
-            <strong>Total TTC : {{ number_format($order->total, 2, ',', ' ') }} €</strong>
+            <strong>Total de la commande annulée : {{ number_format($order->total, 2, ',', ' ') }} €</strong>
         </div>
 
         <div style="text-align: center; margin: 30px 0;">
-            <a href="{{ route('orders.show', $order) }}" class="btn">Voir les détails</a>
-            @if($order->invoice)
-                <a href="{{ route('orders.invoice', $order) }}" class="btn">Télécharger la facture</a>
-            @endif
+            <a href="{{ route('products.index') }}" class="btn">Voir nos véhicules</a>
+            <a href="{{ route('orders.index') }}" class="btn">Mes commandes</a>
         </div>
 
         <div style="background: #e7f3ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h4>📞 Besoin d'aide ?</h4>
-            <p>Si vous avez des questions concernant votre commande, n'hésitez pas à nous contacter :</p>
+            <p>Si vous avez des questions ou souhaitez passer une nouvelle commande, n'hésitez pas à nous contacter :</p>
             <p>📧 Email : contact@autopremium.fr<br>
             📞 Téléphone : +33 1 23 45 67 89</p>
         </div>

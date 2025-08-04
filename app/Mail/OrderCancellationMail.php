@@ -10,7 +10,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OrderConfirmationMail extends Mailable
+class OrderCancellationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -30,7 +30,7 @@ class OrderConfirmationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Confirmation de votre commande #' . str_pad($this->order->id, 6, '0', STR_PAD_LEFT),
+            subject: 'Annulation de votre commande #' . str_pad($this->order->id, 6, '0', STR_PAD_LEFT),
         );
     }
 
@@ -40,7 +40,7 @@ class OrderConfirmationMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.order_confirmation',
+            view: 'emails.order_cancellation',
             with: [
                 'order' => $this->order,
                 'orderNumber' => str_pad($this->order->id, 6, '0', STR_PAD_LEFT),
