@@ -9,6 +9,8 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Attachment;
+use PDF;
 
 class OrderConfirmationMail extends Mailable
 {
@@ -30,7 +32,11 @@ class OrderConfirmationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
+<<<<<<< HEAD
             subject: 'Confirmation de votre commande #' . str_pad($this->order->id, 6, '0', STR_PAD_LEFT),
+=======
+            subject: 'Confirmation de votre commande - E-Commerce Premium',
+>>>>>>> 67797e28225dc09dffa7355be39ecd45881ad812
         );
     }
 
@@ -41,10 +47,13 @@ class OrderConfirmationMail extends Mailable
     {
         return new Content(
             view: 'emails.order_confirmation',
+<<<<<<< HEAD
             with: [
                 'order' => $this->order,
                 'orderNumber' => str_pad($this->order->id, 6, '0', STR_PAD_LEFT),
             ],
+=======
+>>>>>>> 67797e28225dc09dffa7355be39ecd45881ad812
         );
     }
 
@@ -55,6 +64,37 @@ class OrderConfirmationMail extends Mailable
      */
     public function attachments(): array
     {
-        return [];
+        $attachments = [];
+        
+        // Ajouter la facture PDF si elle existe
+        if ($this->order->invoice && \Storage::disk('public')->exists($this->order->invoice->pdf_path)) {
+            $attachments[] = Attachment::fromStorageDisk('public', $this->order->invoice->pdf_path)
+                ->as($this->order->invoice->invoice_number . '.pdf')
+                ->withMime('application/pdf');
+        }
+        
+        return $attachments;
     }
+<<<<<<< HEAD
+=======
+
+    /**
+     * Build the message.
+     */
+    public function build()
+    {
+        $mail = $this->subject('Confirmation de votre commande - E-Commerce Premium')
+            ->view('emails.order_confirmation');
+
+        // Ajouter la facture PDF en pièce jointe si elle existe
+        if ($this->order->invoice && \Storage::disk('public')->exists($this->order->invoice->pdf_path)) {
+            $mail->attach(storage_path('app/public/' . $this->order->invoice->pdf_path), [
+                'as' => $this->order->invoice->invoice_number . '.pdf',
+                'mime' => 'application/pdf',
+            ]);
+        }
+
+        return $mail;
+    }
+>>>>>>> 67797e28225dc09dffa7355be39ecd45881ad812
 }
