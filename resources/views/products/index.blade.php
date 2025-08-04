@@ -113,50 +113,35 @@
                         </div>
                         <div class="product-badge">
                             @if($product->stock > 0)
-<<<<<<< HEAD
-                                @auth
-                                    <form action="{{ route('cart.add', $product) }}" method="POST" class="d-grid">
-                                        @csrf
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-shopping-cart"></i> Ajouter au panier
-                                        </button>
-                                    </form>
-                                @else
-                                    <a href="{{ route('login') }}" class="btn btn-primary">
-                                        <i class="fas fa-sign-in-alt"></i> Connectez-vous pour commander
-                                    </a>
-                                @endauth
-=======
                                 <span class="badge bg-success">En stock</span>
->>>>>>> 67797e28225dc09dffa7355be39ecd45881ad812
                             @else
                                 <span class="badge bg-danger">Rupture</span>
                             @endif
                         </div>
                     </div>
-                    
+
                     <div class="product-content">
                         <div class="product-category">
                             <span class="category-tag">{{ $product->category->name }}</span>
                         </div>
-                        
+
                         <h5 class="product-title">{{ $product->name }}</h5>
-                        
+
                         <p class="product-description">{{ Str::limit($product->description, 80) }}</p>
-                        
+
                         <div class="product-features">
                             <div class="feature-item">
                                 <i class="fas fa-tag text-muted"></i>
                                 <span>Stock: {{ $product->stock }}</span>
                             </div>
                         </div>
-                        
+
                         <div class="product-footer">
                             <div class="price-container">
                                 <span class="price-amount">{{ number_format($product->price, 0, ',', ' ') }} €</span>
                                 <span class="price-label">Prix TTC</span>
                             </div>
-                            
+
                             <div class="product-buttons">
                                 <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary btn-sm">
                                     Détails
@@ -502,11 +487,11 @@
         flex-direction: column;
         gap: 1rem;
     }
-    
+
     .search-card {
         padding: 1.5rem;
     }
-    
+
     .product-card {
         margin-bottom: 1rem;
     }
