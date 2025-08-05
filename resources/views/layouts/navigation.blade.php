@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
     <div class="container">
                 <!-- Logo -->
-        <a class="navbar-brand fw-bold" href="{{ route('dashboard') }}">
+        <a class="navbar-brand fw-bold" href="{{ route('home') }}">
             <i class="fas fa-car me-2"></i>AutoPremium
         </a>
 
@@ -14,7 +14,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                    <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">
                         <i class="fas fa-home me-1"></i>Accueil
                     </a>
                 </li>
